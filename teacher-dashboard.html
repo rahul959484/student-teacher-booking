@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - EduBook</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-calendar-check"></i>
+                <span>EduBook</span>
+            </div>
+            <div class="nav-user">
+                <span id="userName">Loading...</span>
+                <button class="btn btn-secondary" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="user-details">
+                        <h3 id="sidebarUserName">Teacher</h3>
+                        <p>Teacher Dashboard</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#overview" class="sidebar-link active" onclick="showSection('overview')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Overview
+                </a>
+                <a href="#appointments" class="sidebar-link" onclick="showSection('appointments')">
+                    <i class="fas fa-calendar-check"></i>
+                    Appointments
+                </a>
+                <a href="#availability" class="sidebar-link" onclick="showSection('availability')">
+                    <i class="fas fa-clock"></i>
+                    Set Availability
+                </a>
+                <a href="#students" class="sidebar-link" onclick="showSection('students')">
+                    <i class="fas fa-user-graduate"></i>
+                    Students
+                </a>
+                <a href="#profile" class="sidebar-link" onclick="showSection('profile')">
+                    <i class="fas fa-user-cog"></i>
+                    Profile
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Section -->
+            <section id="overview" class="dashboard-section active">
+                <div class="section-header">
+                    <h1>Welcome back, <span id="welcomeName">Teacher</span>!</h1>
+                    <p>Here's your appointment summary</p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalAppointments">0</h3>
+                            <p>Total Appointments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="pendingAppointments">0</h3>
+                            <p>Pending</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="confirmedAppointments">0</h3>
+                            <p>Confirmed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalStudents">0</h3>
+                            <p>Students</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upcoming-appointments">
+                    <h2>Today's Appointments</h2>
+                    <div id="todayAppointmentsList" class="appointments-list">
+                        <div class="loading">Loading appointments...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Appointments Section -->
+            <section id="appointments" class="dashboard-section">
+                <div class="section-header">
+                    <h1>Appointment Requests</h1>
+                    <p>Manage student appointment requests</p>
+                </div>
+
+                <div class="appointments-filters">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="pending">Pending</button>
+                    <button class="filter-btn" data-filter="confirmed">Confirmed</button>
+                    <button class="filter-btn" data-filter="cancelled">Cancelled</button>
+                </div>
+
+                <div id="appointmentsList" class="appointments-list">
+                    <div class="loading">Loading appointments...</div>
+                </div>
+            </section>
+
+            <!-- Availability Section -->
+            <section id="availability" class="dashboard-section">
+                <div class="section-header">
+                    <h1>Set Your Availability</h1>
+                    <p>Define when students can book appointments with you</p>
+                </div>
+
+                <div class="availability-container">
+                    <form id="availabilityForm" class="availability-form">
+                        <div class="availability-grid">
+                            <div class="day-column">
+                                <h3>Monday</h3>
+                                <div class="time-slots">
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="monday_9" value="9:00">
+                                        <span>9:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="monday_10" value="10:00">
+                                        <span>10:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="monday_11" value="11:00">
+                                        <span>11:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="monday_14" value="14:00">
+                                        <span>2:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="monday_15" value="15:00">
+                                        <span>3:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="monday_16" value="16:00">
+                                        <span>4:00 PM</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="day-column">
+                                <h3>Tuesday</h3>
+                                <div class="time-slots">
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="tuesday_9" value="9:00">
+                                        <span>9:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="tuesday_10" value="10:00">
+                                        <span>10:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="tuesday_11" value="11:00">
+                                        <span>11:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="tuesday_14" value="14:00">
+                                        <span>2:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="tuesday_15" value="15:00">
+                                        <span>3:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="tuesday_16" value="16:00">
+                                        <span>4:00 PM</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="day-column">
+                                <h3>Wednesday</h3>
+                                <div class="time-slots">
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="wednesday_9" value="9:00">
+                                        <span>9:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="wednesday_10" value="10:00">
+                                        <span>10:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="wednesday_11" value="11:00">
+                                        <span>11:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="wednesday_14" value="14:00">
+                                        <span>2:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="wednesday_15" value="15:00">
+                                        <span>3:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="wednesday_16" value="16:00">
+                                        <span>4:00 PM</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="day-column">
+                                <h3>Thursday</h3>
+                                <div class="time-slots">
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="thursday_9" value="9:00">
+                                        <span>9:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="thursday_10" value="10:00">
+                                        <span>10:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="thursday_11" value="11:00">
+                                        <span>11:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="thursday_14" value="14:00">
+                                        <span>2:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="thursday_15" value="15:00">
+                                        <span>3:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="thursday_16" value="16:00">
+                                        <span>4:00 PM</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="day-column">
+                                <h3>Friday</h3>
+                                <div class="time-slots">
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="friday_9" value="9:00">
+                                        <span>9:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="friday_10" value="10:00">
+                                        <span>10:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="friday_11" value="11:00">
+                                        <span>11:00 AM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="friday_14" value="14:00">
+                                        <span>2:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="friday_15" value="15:00">
+                                        <span>3:00 PM</span>
+                                    </label>
+                                    <label class="time-slot">
+                                        <input type="checkbox" name="friday_16" value="16:00">
+                                        <span>4:00 PM</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <i class="fas fa-save"></i>
+                            Save Availability
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Students Section -->
+            <section id="students" class="dashboard-section">
+                <div class="section-header">
+                    <h1>My Students</h1>
+                    <p>View students who have booked appointments with you</p>
+                </div>
+
+                <div id="studentsList" class="students-grid">
+                    <div class="loading">Loading students...</div>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile" class="dashboard-section">
+                <div class="section-header">
+                    <h1>My Profile</h1>
+                    <p>Update your personal information</p>
+                </div>
+
+                <div class="profile-container">
+                    <form id="profileForm" class="profile-form">
+                        <div class="form-group">
+                            <label for="profileName">Full Name</label>
+                            <input type="text" id="profileName" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileEmail">Email</label>
+                            <input type="email" id="profileEmail" required readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profilePhone">Phone Number</label>
+                            <input type="tel" id="profilePhone">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileDepartment">Department</label>
+                            <input type="text" id="profileDepartment" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileSpecialization">Specialization</label>
+                            <input type="text" id="profileSpecialization">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileBio">Bio</label>
+                            <textarea id="profileBio" rows="4" placeholder="Tell students about yourself..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Update Profile
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Appointment Details Modal -->
+    <div id="appointmentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAppointmentModal()">&times;</span>
+            <h2>Appointment Details</h2>
+            <div id="appointmentModalContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="teacher-dashboard.js"></script>
+</body>
+</html> 

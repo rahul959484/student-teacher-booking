@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - EduBook</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-calendar-check"></i>
+                <span>EduBook</span>
+            </div>
+            <div class="nav-user">
+                <span id="userName">Loading...</span>
+                <button class="btn btn-secondary" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="user-details">
+                        <h3 id="sidebarUserName">Student</h3>
+                        <p>Student Dashboard</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#overview" class="sidebar-link active" onclick="showSection('overview')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Overview
+                </a>
+                <a href="#book-appointment" class="sidebar-link" onclick="showSection('book-appointment')">
+                    <i class="fas fa-calendar-plus"></i>
+                    Book Appointment
+                </a>
+                <a href="#my-appointments" class="sidebar-link" onclick="showSection('my-appointments')">
+                    <i class="fas fa-calendar-check"></i>
+                    My Appointments
+                </a>
+                <a href="#teachers" class="sidebar-link" onclick="showSection('teachers')">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    Teachers
+                </a>
+                <a href="#profile" class="sidebar-link" onclick="showSection('profile')">
+                    <i class="fas fa-user-cog"></i>
+                    Profile
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Section -->
+            <section id="overview" class="dashboard-section active">
+                <div class="section-header">
+                    <h1>Welcome back, <span id="welcomeName">Student</span>!</h1>
+                    <p>Here's what's happening with your appointments</p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalAppointments">0</h3>
+                            <p>Total Appointments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="pendingAppointments">0</h3>
+                            <p>Pending</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="confirmedAppointments">0</h3>
+                            <p>Confirmed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="cancelledAppointments">0</h3>
+                            <p>Cancelled</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-appointments">
+                    <h2>Recent Appointments</h2>
+                    <div id="recentAppointmentsList" class="appointments-list">
+                        <div class="loading">Loading appointments...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Book Appointment Section -->
+            <section id="book-appointment" class="dashboard-section">
+                <div class="section-header">
+                    <h1>Book New Appointment</h1>
+                    <p>Schedule a meeting with your teacher</p>
+                </div>
+
+                <div class="booking-container">
+                    <form id="bookingForm" class="booking-form">
+                        <div class="form-group">
+                            <label for="teacherSelect">Select Teacher</label>
+                            <select id="teacherSelect" required>
+                                <option value="">Choose a teacher...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appointmentDate">Date</label>
+                            <input type="date" id="appointmentDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appointmentTime">Time</label>
+                            <select id="appointmentTime" required>
+                                <option value="">Select time...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appointmentDuration">Duration</label>
+                            <select id="appointmentDuration" required>
+                                <option value="30">30 minutes</option>
+                                <option value="60" selected>1 hour</option>
+                                <option value="90">1.5 hours</option>
+                                <option value="120">2 hours</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appointmentPurpose">Purpose</label>
+                            <textarea id="appointmentPurpose" rows="4" placeholder="Describe the purpose of your appointment..." required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <i class="fas fa-calendar-plus"></i>
+                            Book Appointment
+                        </button>
+                    </form>
+
+                    <div class="teacher-info">
+                        <h3>Teacher Information</h3>
+                        <div id="selectedTeacherInfo" class="teacher-details">
+                            <p>Select a teacher to view their information</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Appointments Section -->
+            <section id="my-appointments" class="dashboard-section">
+                <div class="section-header">
+                    <h1>My Appointments</h1>
+                    <p>Manage your scheduled appointments</p>
+                </div>
+
+                <div class="appointments-filters">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="pending">Pending</button>
+                    <button class="filter-btn" data-filter="confirmed">Confirmed</button>
+                    <button class="filter-btn" data-filter="cancelled">Cancelled</button>
+                </div>
+
+                <div id="appointmentsList" class="appointments-list">
+                    <div class="loading">Loading appointments...</div>
+                </div>
+            </section>
+
+            <!-- Teachers Section -->
+            <section id="teachers" class="dashboard-section">
+                <div class="section-header">
+                    <h1>Available Teachers</h1>
+                    <p>Browse and connect with teachers</p>
+                </div>
+
+                <div id="teachersList" class="teachers-grid">
+                    <div class="loading">Loading teachers...</div>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile" class="dashboard-section">
+                <div class="section-header">
+                    <h1>My Profile</h1>
+                    <p>Update your personal information</p>
+                </div>
+
+                <div class="profile-container">
+                    <form id="profileForm" class="profile-form">
+                        <div class="form-group">
+                            <label for="profileName">Full Name</label>
+                            <input type="text" id="profileName" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileEmail">Email</label>
+                            <input type="email" id="profileEmail" required readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profilePhone">Phone Number</label>
+                            <input type="tel" id="profilePhone">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileDepartment">Department</label>
+                            <input type="text" id="profileDepartment">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="profileYear">Year of Study</label>
+                            <select id="profileYear">
+                                <option value="">Select year...</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Update Profile
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Appointment Details Modal -->
+    <div id="appointmentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAppointmentModal()">&times;</span>
+            <h2>Appointment Details</h2>
+            <div id="appointmentModalContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="student-dashboard.js"></script>
+</body>
+</html> 
